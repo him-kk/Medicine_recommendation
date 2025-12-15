@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Medical Diagnosis System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .input-section {
+            margin-bottom: 25px;
+        }
+
+        .input-section label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        #symptomSearch {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        #symptomSearch:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        #symptomSuggestions {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #e0e0e0;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            display: none;
+        }
+
+        .suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .suggestion-item:hover {
+            background: #f0f0f0;
+        }
+
+        #selectedSymptoms {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            min-height: 50px;
+        }
+
+        .symptom-tag {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95em;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .symptom-tag span {
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        #results {
+            display: none;
+        }
+
+        .diagnosis-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid;
+        }
+
+        .diagnosis-card.primary {
+            border-left-color: #667eea;
+        }
+
+        .diagnosis-card.secondary {
+            border-left-color: #ffa726;
+        }
+
+        .diagnosis-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .confidence-bar {
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            color: white;
+            font-weight: 600;
+            transition: width 1s ease;
+        }
+
+        .info-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .info-section h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-section li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-section li:last-child {
+            border-bottom: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+
+        .disclaimer {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #dc3545;
+            margin-top: 30px;
+            font-size: 0.95em;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
+
+            .card {
+                padding: 20px;
+            }
+        }
+
+        .icon {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏥 AI Medical Diagnosis System</h1>
+            <p>Advanced Machine Learning-Powered Disease Prediction</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Input Section -->
+            <div class="card">
+                <h2>📋 Enter Symptoms</h2>
+                
+                <div class="input-section">
+                    <label for="symptomSearch">Search Symptoms:</label>
+                    <input 
+                        type="text" 
+                        id="symptomSearch" 
+                        placeholder="Type to search symptoms..."
+                        autocomplete="off"
+                    >
+                    <div id="symptomSuggestions"></div>
+                </div>
+
+                <div class="input-section">
+                    <label>Selected Symptoms:</label>
+                    <div id="selectedSymptoms">
+                        <p style="color: #999; font-style: italic;">No symptoms selected yet</p>
+                    </div>
+                </div>
+
+                <div class="input-section">
+                    <label for="modelSelect">Select AI Model:</label>
+                    <select id="modelSelect">
+                        <option value="Stacking Ensemble">Stacking Ensemble (Best)</option>
+                        <option value="Neural Network">Neural Network</option>
+                        <option value="Random Forest">Random Forest</option>
+                        <option value="XGBoost">XGBoost</option>
+                        <option value="Gradient Boosting">Gradient Boosting</option>
+                        <option value="Voting Ensemble">Voting Ensemble</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary" id="predictBtn" disabled>
+                    🔍 Diagnose Disease
+                </button>
+                <button class="btn btn-secondary" id="clearBtn">
+                    🗑️ Clear All
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div class="card">
+                <h2>📊 Diagnosis Results</h2>
+                
+                <div id="loadingState" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Analyzing symptoms...</p>
+                </div>
+
+                <div id="results">
+                    <!-- Results will be inserted here -->
+                </div>
+
+                <div id="emptyState" style="text-align: center; padding: 40px; color: #999;">
+                    <p style="font-size: 3em;">🩺</p>
+                    <p>Enter symptoms to get diagnosis</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card disclaimer">
+            <strong>⚠️ IMPORTANT MEDICAL DISCLAIMER</strong>
+            <p style="margin-top: 10px;">
+                This AI system is for educational and informational purposes ONLY. 
+                It is NOT a substitute for professional medical advice, diagnosis, or treatment. 
+                Always consult with a qualified healthcare provider for any medical concerns.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let allSymptoms = [];
+        let selectedSymptoms = [];
+
+        // Fetch symptoms on load
+        fetch('/symptoms')
+            .then(res => res.json())
+            .then(data => {
+                allSymptoms = data.symptoms;
+            });
+
+        // Search functionality
+        const searchInput = document.getElementById('symptomSearch');
+        const suggestionsDiv = document.getElementById('symptomSuggestions');
+        
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            
+            if (query.length < 2) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+
+            const filtered = allSymptoms.filter(s => 
+                s.includes(query) && !selectedSymptoms.includes(s)
+            ).slice(0, 10);
+
+            if (filtered.length > 0) {
+                suggestionsDiv.innerHTML = filtered.map(s => 
+                    `<div class="suggestion-item" data-symptom="${s}">${s.replace(/_/g, ' ')}</div>`
+                ).join('');
+                suggestionsDiv.style.display = 'block';
+            } else {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+
+        // Add symptom
+        suggestionsDiv.addEventListener('click', function(e) {
+            if (e.target.classList.contains('suggestion-item')) {
+                const symptom = e.target.dataset.symptom;
+                addSymptom(symptom);
+                searchInput.value = '';
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+
+        function addSymptom(symptom) {
+            if (!selectedSymptoms.includes(symptom)) {
+                selectedSymptoms.push(symptom);
+                updateSelectedSymptoms();
+            }
+        }
+
+        function removeSymptom(symptom) {
+            selectedSymptoms = selectedSymptoms.filter(s => s !== symptom);
+            updateSelectedSymptoms();
+        }
+
+        function updateSelectedSymptoms() {
+            const container = document.getElementById('selectedSymptoms');
+            
+            if (selectedSymptoms.length === 0) {
+                container.innerHTML = '<p style="color: #999; font-style: italic;">No symptoms selected yet</p>';
+                document.getElementById('predictBtn').disabled = true;
+            } else {
+                container.innerHTML = selectedSymptoms.map(s => 
+                    `<div class="symptom-tag">
+                        ${s.replace(/_/g, ' ')}
+                        <span onclick="removeSymptom('${s}')">&times;</span>
+                    </div>`
+                ).join('');
+                document.getElementById('predictBtn').disabled = false;
+            }
+        }
+
+        // Predict
+        document.getElementById('predictBtn').addEventListener('click', async function() {
+            const model = document.getElementById('modelSelect').value;
+            
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        symptoms: selectedSymptoms,
+                        model: model
+                    })
+                });
+
+                const data = await response.json();
+                
+                document.getElementById('loadingState').style.display = 'none';
+                
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                document.getElementById('loadingState').style.display = 'none';
+                alert('Network error: ' + error.message);
+            }
+        });
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+
+            let html = '';
+
+            // Warning
+            if (data.primary_confidence < 0.5) {
+                html += `
+                    <div class="warning">
+                        <strong>⚠️ Low Confidence Warning</strong>
+                        <p>Confidence: ${(data.primary_confidence * 100).toFixed(1)}%. Professional consultation strongly recommended.</p>
+                    </div>
+                `;
+            }
+
+            // Primary diagnosis
+            const primary = data.predictions[0];
+            html += `
+                <div class="diagnosis-card primary">
+                    <h3>🎯 Primary Diagnosis</h3>
+                    <h2 style="color: #667eea; margin: 10px 0;">${primary.disease}</h2>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: ${primary.confidence * 100}%">
+                            ${(primary.confidence * 100).toFixed(1)}% Confidence
+                        </div>
+                    </div>
+
+                    ${primary.medical_info.description !== 'No description available.' ? `
+                        <div class="info-section">
+                            <h4>📋 Description</h4>
+                            <p>${primary.medical_info.description}</p>
+                        </div>
+                    ` : ''}
+
+                    ${primary.medical_info.precautions.length > 0 ? `
+                        <div class="info-section">
+                            <h4>⚕️ Precautions</h4>
+                            <ul>
+                                ${primary.medical_info.precautions.map(p => `<li>• ${p}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+
+                    ${primary.medical_info.medications.length > 0 ? `
+                        <div class="info-section">
+                            <h4>💊 Medications</h4>
+                            <ul>
+                                ${primary.medical_info.medications.map(m => 
+                                    Array.isArray(m) ? m.map(sub => `<li>• ${sub}</li>`).join('') : `<li>• ${m}</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+
+                    ${primary.medical_info.diet.length > 0 ? `
+                        <div class="info-section">
+                            <h4>🥗 Diet Recommendations</h4>
+                            <ul>
+                                ${primary.medical_info.diet.map(d => 
+                                    Array.isArray(d) ? d.map(sub => `<li>• ${sub}</li>`).join('') : `<li>• ${d}</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+
+                    ${primary.medical_info.workout.length > 0 ? `
+                        <div class="info-section">
+                            <h4>🏃 Lifestyle Recommendations</h4>
+                            <ul>
+                                ${primary.medical_info.workout.map(w => `<li>• ${w}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            // Differential diagnosis
+            if (data.predictions.length > 1) {
+                html += `
+                    <h3 style="margin: 30px 0 15px; color: #666;">📊 Differential Diagnosis</h3>
+                `;
+
+                for (let i = 1; i < data.predictions.length; i++) {
+                    const pred = data.predictions[i];
+                    html += `
+                        <div class="diagnosis-card secondary">
+                            <h3>${pred.disease}</h3>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" style="width: ${pred.confidence * 100}%">
+                                    ${(pred.confidence * 100).toFixed(1)}%
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            resultsDiv.innerHTML = html;
+        }
+
+        // Clear button
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            selectedSymptoms = [];
+            updateSelectedSymptoms();
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+            searchInput.value = '';
+        });
+    </script>
+</body>
+</html>
